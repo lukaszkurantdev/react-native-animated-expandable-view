@@ -1,10 +1,18 @@
 {
   "compilerOptions": {
-    "target": "es5",
-    "module": "commonjs",
+    "jsx": "react-native",
+    "module": "ES2020",
     "declaration": true,
     "outDir": "./lib",
-    "strict": true
+    "allowJs": true,
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "isolatedModules": true,
+    "lib": ["es7"],
+    "moduleResolution": "node",
+    "strict": true,
+    "target": "esnext",
+    "experimentalDecorators": true
   },
   "include": ["src"],
   "exclude": ["node_modules", "**/__tests__/*"]
