@@ -1,88 +1,46 @@
 import React from 'react';
-import { ViewStyle, StyleProp, View, LayoutChangeEvent, StyleSheet } from 'react-native';
-import * as Animatable from 'react-native-animatable';
+import { ViewStyle, StyleProp, View, UIManager, Platform, LayoutAnimation, LayoutAnimationTypes } from 'react-native';
+
+type Easing = keyof LayoutAnimationTypes;
 
 export interface AnimatedExpandableViewProps {
   visible: boolean;
-  duration?: number;
+  duration: number;
   delay?: number;
-  easing?: Animatable.Easing;
+  easing?: Easing;
   style?: StyleProp<ViewStyle>;
-  onAnimationBegin?: () => void;
   onAnimationEnd?: () => void;
 }
 
-export default class AnimatedExpandableView extends React.PureComponent<AnimatedExpandableViewProps> {
-  static defaultProps: Partial<AnimatedExpandableViewProps> = {
-    duration: 400,
-    delay: 0,
-  };
-
-  animatableViewRef = React.createRef<Animatable.View & View>();
-  contentViewRef = React.createRef<View>();
-  contentHeight?: number;
-  visible: boolean = false;
-
-  state = {
-    measured: false,
-  };
-
-  toggle = (visible?: boolean) => {
-    const ref = this.animatableViewRef.current;
-    const { duration, delay, easing } = this.props;
-    const { measured } = this.state;
-
-    setTimeout(() => {
-      if (ref && measured && visible !== this.visible) {
-        ref.transition(
-          { height: this.visible ? 0 : this.contentHeight },
-          { height: !this.visible ? 0 : this.contentHeight },
-          duration,
-          easing,
-        );
-        this.visible = !this.visible;
-      }
-    }, delay);
-  };
-
-  onLayoutContent = (event: LayoutChangeEvent) => {
-    const { height } = event.nativeEvent.layout;
-
-    if (!this.state.measured) {
-      this.contentHeight = height;
-      this.setState({ measured: true });
-    }
-  };
-
-  render() {
-    const { style, onAnimationBegin, onAnimationEnd } = this.props;
-    const { measured } = this.state;
-
-    return (
-      <Animatable.View
-        ref={this.animatableViewRef}
-        style={[style, styles.container, measured && styles.measuredContainer]}
-        onAnimationBegin={onAnimationBegin}
-        onAnimationEnd={onAnimationEnd}
-      >
-        <View onLayout={this.onLayoutContent} style={!measured && styles.beforeMeasuredContent}>
-          {this.props.children}
-        </View>
-      </Animatable.View>
-    );
-  }
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
-const styles = StyleSheet.create({
-  container: {
-    overflow: 'hidden',
-  },
-  measuredContainer: {
-    height: 0,
-  },
-  beforeMeasuredContent: {
-    position: 'absolute',
-    top: 0,
-    opacity: 0,
-  },
-});
+export default class AnimatedExpandableView extends React.Component<AnimatedExpandableViewProps> {
+  static defaultProps: Partial<AnimatedExpandableViewProps> = {
+    duration: 100,
+    delay: 0,
+    easing: 'linear',
+    onAnimationEnd: () => null,
+  };
+
+  UNSAFE_componentWillReceiveProps(nextProps: AnimatedExpandableViewProps) {
+    const { easing, duration, delay, onAnimationEnd } = nextProps;
+    const layoutObj = { delay, type: easing, property: 'scaleY' };
+
+    LayoutAnimation.configureNext(
+      {
+        duration,
+        update: layoutObj,
+        create: layoutObj,
+        delete: layoutObj,
+      },
+      onAnimationEnd,
+    );
+  }
+
+  render() {
+    const { style, visible, children } = this.props;
+    return <>{visible && <View style={[style]}>{children}</View>}</>;
+  }
+}
