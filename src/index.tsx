@@ -34,12 +34,7 @@ export default class AnimatedExpandableView extends React.PureComponent<Animated
 
     setTimeout(() => {
       if (ref && measured && visible !== this.visible) {
-        if (this.visible) {
-          ref.transitionTo({ height: 0 }, duration, easing);
-        } else {
-          ref.transitionTo({ height: this.contentHeight }, duration, easing);
-        }
-
+        ref.transitionTo({ height: this.visible ? 0 : this.contentHeight }, duration, easing);
         this.visible = !this.visible;
       }
     }, delay);
